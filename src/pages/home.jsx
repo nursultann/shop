@@ -34,7 +34,17 @@ function Home() {
                 setItems(filteredItems);
             }
     }
-
+    function sortItemsByPrice(order) {
+        // Simulate sorting items based on price
+        let sortedItems = [...items].sort((a, b) => {
+            if (order === 'asc') {
+                return a.price - b.price;
+            } else {
+                return b.price - a.price;
+            }
+        });
+        setItems(sortedItems);
+    }
     return (
         <div>
             <h1>Welcome to the Home Page</h1>
@@ -54,6 +64,11 @@ function Home() {
                             <li><button onClick={() => filterItemsByLocation('USA')}>USA</button></li>
                             <li><button onClick={() => filterItemsByLocation('China')}>China</button></li>
                         </ul>
+                        <h2>Sort by Price</h2>
+                        <select onChange={(e) => sortItemsByPrice(e.target.value)}>
+                            <option value="asc">Low to High</option>
+                            <option value="desc">High to Low</option>
+                        </select>
                     </div>
                     <div className="col-9">
                         <div className="row">
