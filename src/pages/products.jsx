@@ -4,6 +4,7 @@ import axios from "axios";
 function Products() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [cart, setCart] = useState([]);
 
     const fetchProducts = async () => {
         try {
@@ -22,6 +23,10 @@ function Products() {
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    const handleAddToCart = (product) => {
+        setCart((prevCart) => [...prevCart, product]);
+    }
 
     const addToCart = async (product) => {
         // Implement the logic to add the product to the cart
@@ -84,6 +89,25 @@ function Products() {
         <div>
             <h1>Products</h1>
             <div className="container">
+                <div className="row mb-3">
+                    <div className="col">
+                        <h2>Cart</h2>
+                        {cart.length === 0 ? (
+                            <p>Your cart is empty.</p>
+                        ) : (
+                            <ul>
+                                {cart.map((product) => (
+                                    <li key={product.id}>
+                                        {product.title} - ${product.price}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <button className="btn btn-primary" onClick={() => addToCart(cart)}>
+                            Checkout
+                        </button>
+                    </div>
+                </div>
                 <div className="row">
                     {loading ? (
                         <div>Loading...</div>
@@ -97,7 +121,7 @@ function Products() {
                                     <p className="card-text text-muted mb-2"
                                         style={{ whiteSpace: 'nowrap', lineHeight: '1.5', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.description}</p>
                                     <p className="card-text fw-bold">${product.price}</p>
-                                    <button className="btn btn-primary" onClick={() => addToCart(product)}>
+                                    <button className="btn btn-primary" onClick={() => handleAddToCart(product)}>
                                         Add to Cart
                                     </button>
                                 </div>
