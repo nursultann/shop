@@ -1,49 +1,66 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-const Orders = () => {
+function Orders() {
     const [orders, setOrders] = useState([]);
 
-    const fetchOrders = async () => {
-        try {
-            const response = await fetch("https://69a007f73188b0b1d537859e.mockapi.io/orders");
-            if (response.status === 200) {
-                const data = await response.json();
-                setOrders(data);
-            } else {
-                console.error("Failed to fetch orders");
-            }
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-        }
-    };
-
+    // Загрузить заказы
     useEffect(() => {
-        fetchOrders();
+        axios.get("https://69a007f73188b0b1d537859e.mockapi.io/orders").then((res) => {
+            setOrders(res.data);
+        });
     }, []);
 
-    return (
-        <div>
-            <h1>Orders</h1>
-            {orders.length === 0 ? (
-                <p>No orders found.</p>
-            ) : (
-                <ul>
-                    {orders.map((order) => (
-                        <li key={order.id}>
-                            <p>Order ID: {order.id}</p>
-                            <p>Customer Name: {order.customerName}</p>
-                            <p>Customer Phone: {order.customerPhone}</p>
-                            <p>Address: {order.address}</p>
-                            <p>Total Amount: {order.totalAmount}</p>
-                            <p>Status: {order.status}</p>
-                            <p>Note: {order.note}</p>
-                        </li>
-                    ))}
-                </ul>
-            )}
+    // Удалить заказ
+    function deleteOrder(id) {
+        axios.delete(`https://69a007f73188b0b1d537859e.mockapi.io/orders/${id}`).then(() => {
+            setOrders(orders.filter((order) => order.id !== id));
+        });
+    }
 
+    return (
+        <div className="container mt-4">
+            <h1>Заказы</h1>
+
+            {orders.length === 0 ? (
+                <p>Заказов нет</p>
+            ) : (
+                <div className="row">
+                    {orders.map((order) => (
+                        <div className="col-md-6 mb-4" key={order.id}>
+                            <div className="card p-3">
+                                <h5>Заказ #{order.id}</h5>
+                                <p><strong>Имя:</strong> {order.customerName}</p>
+                                <p><strong>Телефон:</strong> {order.customerPhone}</p>
+                                <p><strong>Адрес:</strong> {order.address}</p>
+                                <p><strong>Сумма:</strong> {order.totalAmount} сом</p>
+                                <p><strong>Статус:</strong> {order.status}</p>
+                                <p><strong>Комментарий:</strong> {order.note}</p>
+
+                                {/* Товары в заказе */}
+                                {order.items && order.items.length > 0 && (
+                                    <div>
+                                        <strong>Товары:</strong>
+                                        <ul>
+                                            {order.items.map((item, index) => (
+                                                <li key={index}>
+                                                    {item.name} — {item.price} сом × {item.quantity}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                <button className="btn btn-danger btn-sm mt-2" onClick={() => deleteOrder(order.id)}>
+                                    Удалить заказ
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
-    )
+    );
 }
 
-export default Orders
+export default Orders;

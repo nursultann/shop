@@ -1,137 +1,127 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
 function Products() {
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [cart, setCart] = useState([]);
+    const [cart, setCart] = useState(() => {
+        const saved = localStorage.getItem("cart");
+        return saved ? JSON.parse(saved) : [];
+    });
 
-    const fetchProducts = async () => {
-        try {
-            const response = await axios.get("https://69a007f73188b0b1d537859e.mockapi.io/products");
-            if (response.status === 200) {
-                setProducts(response.data);
-            } else {
-                console.error("Failed to fetch products");
-            }
-        } catch (error) {
-            console.error("Error fetching products:", error);
-        }
-        setLoading(false);
-    };
-
+    // Загрузить продукты
     useEffect(() => {
-        fetchProducts();
+        axios.get("https://69a007f73188b0b1d537859e.mockapi.io/products").then((res) => {
+            setProducts(res.data);
+        });
     }, []);
 
-    const handleAddToCart = (product) => {
-        setCart((prevCart) => [...prevCart, product]);
+    // Сохранять корзину в localStorage при каждом изменении
+    useEffect(() => {
+        localStorage.setItem("cart", JSON.stringify(cart));
+    }, [cart]);
+
+    // Добавить в корзину
+    function addToCart(product) {
+        const exists = cart.find((item) => item.id === product.id);
+        if (exists) {
+            setCart(cart.map((item) =>
+                item.id === product.id
+                    ? { ...item, quantity: item.quantity + 1 }
+                    : item
+            ));
+        } else {
+            setCart([...cart, { ...product, quantity: 1 }]);
+        }
     }
 
-    const addToCart = async (product) => {
-        // Implement the logic to add the product to the cart
-        //API request to add the product to the cart can be made here, for example:
-        //         {
-        //     "createdAt": "2026-06-12T18:09:55.376935",
-        //     "customerName": "test",
-        //     "customerPhone": "+99999999999",
-        //     "items": [
-        //       {
-        //         "productId": "fb-skin-1",
-        //         "productName": "Сыворотка с гиалуроновой кислотой",
-        //         "price": 12500,
-        //         "quantity": 2,
-        //         "imageUrl": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80"
-        //       }
-        //     ],
-        //     "address": "Ош",
-        //     "totalAmount": 25000,
-        //     "status": "confirmed",
-        //     "note": "test",
-        //     "id": "1"
-        //   },
-        console.log("Adding to cart:", product);
-        const cartItem = {
-            "customerName": "test",
-            "customerPhone": "+99999999999",
-            "items": [
-                {
-                    "productId": product.id,
-                    "productName": product.title,
-                    "price": product.price,
-                    "quantity": 1,
-                    "imageUrl": product.imageUrl
-                }
-            ],
-            "address": "Ош",
-            "totalAmount": 25000,
-            "status": "confirmed",
-            "note": "test",
-            "id": "1"
+    // Убрать из корзины
+    function removeFromCart(id) {
+        setCart(cart.filter((item) => item.id !== id));
+    }
 
-        };
-        console.log("Cart item:", cartItem);
+    // Итоговая сумма
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-        try {
-            const response = await axios.post("https://69a007f73188b0b1d537859e.mockapi.io/products", cartItem);
-            if (response.status === 201) {
-                console.log("Product added to cart successfully");
-            } else {
-                console.error("Failed to add product to cart");
-            }
-        } catch (error) {
-            console.error("Error adding product to cart:", error);
-        }
-
+    // Перейти к оформлению заказа
+    function goToCheckout() {
+        localStorage.setItem("cart", JSON.stringify(cart));
+        navigate("/checkout");
     }
 
     return (
-        <div>
-            <h1>Products</h1>
-            <div className="container">
-                <div className="row mb-3">
-                    <div className="col">
-                        <h2>Cart</h2>
-                        {cart.length === 0 ? (
-                            <p>Your cart is empty.</p>
-                        ) : (
-                            <ul>
-                                {cart.map((product) => (
-                                    <li key={product.id}>
-                                        {product.title} - ${product.price}
-                                    </li>
+        <div className="container mt-4">
+            <h1>Продукты</h1>
+
+            {/* Корзина */}
+            <div className="card mb-4 p-3">
+                <h2>Корзина</h2>
+                {cart.length === 0 ? (
+                    <p>Корзина пуста</p>
+                ) : (
+                    <>
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Фото</th>
+                                    <th>Название</th>
+                                    <th>Цена</th>
+                                    <th>Кол-во</th>
+                                    <th>Сумма</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cart.map((item) => (
+                                    <tr key={item.id}>
+                                        <td>
+                                            <img src={item.imageUrl} alt={item.name} width={50} height={50} style={{ objectFit: "cover" }} />
+                                        </td>
+                                        <td>{item.name}</td>
+                                        <td>{item.price} сом</td>
+                                        <td>{item.quantity}</td>
+                                        <td>{item.price * item.quantity} сом</td>
+                                        <td>
+                                            <button className="btn btn-danger btn-sm" onClick={() => removeFromCart(item.id)}>
+                                                Удалить
+                                            </button>
+                                        </td>
+                                    </tr>
                                 ))}
-                            </ul>
-                        )}
-                        <button className="btn btn-primary" onClick={() => addToCart(cart)}>
-                            Checkout
+                            </tbody>
+                        </table>
+                        <p><strong>Итого: {total} сом</strong></p>
+                        <button className="btn btn-success" onClick={goToCheckout}>
+                            Оформить заказ
                         </button>
-                    </div>
-                </div>
-                <div className="row">
-                    {loading ? (
-                        <div>Loading...</div>
-                    ) : null}
-                    {products.map((product) => (
-                        <div className="col-md-4" key={product.id}>
-                            <div className="card">
-                                <img src={product.imageUrl} className="card-img-top" alt={product.title} />
-                                <div className="card-body">
-                                    <h5 className="card-title fw-bold">{product.title}</h5>
-                                    <p className="card-text text-muted mb-2"
-                                        style={{ whiteSpace: 'nowrap', lineHeight: '1.5', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.description}</p>
-                                    <p className="card-text fw-bold">${product.price}</p>
-                                    <button className="btn btn-primary" onClick={() => handleAddToCart(product)}>
-                                        Add to Cart
-                                    </button>
-                                </div>
+                    </>
+                )}
+            </div>
+
+            {/* Список продуктов */}
+            <div className="row">
+                {products.map((product) => (
+                    <div className="col-md-4 mb-4" key={product.id}>
+                        <div className="card h-100">
+                            <img src={product.imageUrl} className="card-img-top" alt={product.name} style={{ height: 200, objectFit: "cover" }} />
+                            <div className="card-body">
+                                <h5 className="card-title">{product.name}</h5>
+                                <p className="card-text text-muted">{product.description}</p>
+                                <p><strong>Цена:</strong> {product.price} сом</p>
+                                <p><strong>Категория:</strong> {product.category}</p>
+                                <p><strong>На складе:</strong> {product.stock} шт.</p>
+                                <p><strong>Доступен:</strong> {product.isAvailable ? "Да" : "Нет"}</p>
+                                <button className="btn btn-primary" onClick={() => addToCart(product)}>
+                                    В корзину
+                                </button>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
             </div>
         </div>
-    )
+    );
 }
 
-export default Products
+export default Products;
