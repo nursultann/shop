@@ -10,6 +10,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Products from './pages/products'
 import Orders from './pages/orders'
 import Checkout from './pages/checkout'
+import OrdersDetail from './pages/orders-detail'
 
 function App() {
 
@@ -21,6 +22,7 @@ function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders/:id" element={<OrdersDetail />} />
         </Routes>
       </BrowserRouter>
       

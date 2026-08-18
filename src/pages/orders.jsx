@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Orders() {
     const [orders, setOrders] = useState([]);
@@ -54,6 +55,9 @@ function Orders() {
                                 <button className="btn btn-danger btn-sm mt-2" onClick={() => deleteOrder(order.id)}>
                                     Удалить заказ
                                 </button>
+                                <a href={`/orders/${order.id}`} className="btn btn-primary btn-sm mt-2 ms-2">
+                                    Подробнее
+                                </a>
                             </div>
                         </div>
                     ))}
