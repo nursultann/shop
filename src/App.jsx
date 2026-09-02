@@ -11,6 +11,7 @@ import Products from './pages/products'
 import Orders from './pages/orders'
 import Checkout from './pages/checkout'
 import OrdersDetail from './pages/orders-detail'
+import Courier from './pages/courier'
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders/:id" element={<OrdersDetail />} />
+          <Route path="/courier" element={<Courier />} />
         </Routes>
       </BrowserRouter>
       

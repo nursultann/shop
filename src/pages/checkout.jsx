@@ -55,8 +55,14 @@ function Checkout() {
         setMarkerLng(latlng.lng);
     }
 
-    // Итоговая сумма
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // Стоимость доставки по городу
+    const DELIVERY_FEE = 400;
+
+    // Сумма товаров
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // Итоговая сумма с доставкой
+    const total = subtotal + DELIVERY_FEE;
 
     // Отправка заказа
     function submitOrder(e) {
@@ -167,16 +173,29 @@ function Checkout() {
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan={2}><strong>Итого</strong></td>
-                                        <td><strong>{total} сом</strong></td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         )}
 
-                        <button type="submit" className="btn btn-success w-100 mt-2" disabled={cart.length === 0}>
+                        {/* Блок с итогами отдельно от таблицы */}
+                        {cart.length > 0 && (
+                            <div className="border rounded p-3 mt-2 bg-light">
+                                <div className="d-flex justify-content-between mb-2">
+                                    <span className="text-muted">Сумма товаров</span>
+                                    <span>{subtotal} сом</span>
+                                </div>
+                                <div className="d-flex justify-content-between mb-2">
+                                    <span className="text-muted">🚴 Доставка по городу</span>
+                                    <span>{DELIVERY_FEE} сом</span>
+                                </div>
+                                <hr className="my-2" />
+                                <div className="d-flex justify-content-between">
+                                    <strong>Итого</strong>
+                                    <strong className="text-success fs-5">{total} сом</strong>
+                                </div>
+                            </div>
+                        )}
+
+                        <button type="submit" className="btn btn-success w-100 mt-3" disabled={cart.length === 0}>
                             Подтвердить заказ
                         </button>
                     </form>
