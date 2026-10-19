@@ -68,6 +68,16 @@ function FitBounds({ points }) {
     return null;
 }
 
+function FlyTo({ position }) {
+    const map = useMap();
+    useEffect(() => {
+        if (position) {
+            map.flyTo(position, 16, { duration: 1.2 });
+        }
+    }, [position, map]);
+    return null;
+}
+
 function Courier() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -78,12 +88,63 @@ function Courier() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [updatingId, setUpdatingId] = useState(null);
 
+    // Поиск адреса
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchMarker, setSearchMarker] = useState(null);
+    const [flyTarget, setFlyTarget] = useState(null);
+
     useEffect(() => {
         axios.get(API).then((res) => {
             setOrders(res.data);
             setLoading(false);
         });
     }, []);
+
+    // Поиск адреса через Nominatim с debounce
+    useEffect(() => {
+        if (searchQuery.trim().length < 3) {
+            setSearchResults([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const res = await axios.get("https://nominatim.openstreetmap.org/search", {
+                    params: {
+                        q: searchQuery,
+                        format: "json",
+                        limit: 5,
+                        countrycodes: "kg",
+                        "accept-language": "ru",
+                    },
+                    headers: { "Accept-Language": "ru" },
+                });
+                setSearchResults(res.data);
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    function selectSearchResult(result) {
+        const pos = [parseFloat(result.lat), parseFloat(result.lon)];
+        setSearchMarker(pos);
+        setFlyTarget(pos);
+        setSearchQuery(result.display_name);
+        setSearchResults([]);
+    }
+
+    function clearSearch() {
+        setSearchQuery("");
+        setSearchResults([]);
+        setSearchMarker(null);
+        setFlyTarget(null);
+    }
 
     const filteredOrders = orders.filter((o) =>
         statusFilter === "all" ? true : o.status === statusFilter
@@ -279,18 +340,70 @@ function Courier() {
                 </div>
 
                 <div className="col-lg-8">
+                    {/* Поиск адреса */}
+                    <div className="mb-2 position-relative">
+                        <div className="input-group">
+                            <span className="input-group-text">🔍</span>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Поиск адреса в Бишкеке..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            {searchLoading && (
+                                <span className="input-group-text">
+                                    <div className="spinner-border spinner-border-sm text-secondary" />
+                                </span>
+                            )}
+                            {searchQuery && (
+                                <button className="btn btn-outline-secondary" onClick={clearSearch}>✕</button>
+                            )}
+                        </div>
+
+                        {/* Выпадающий список результатов */}
+                        {searchResults.length > 0 && (
+                            <ul className="list-group position-absolute w-100 shadow-sm" style={{ zIndex: 9999, top: "100%", maxHeight: 220, overflowY: "auto" }}>
+                                {searchResults.map((r) => (
+                                    <li
+                                        key={r.place_id}
+                                        className="list-group-item list-group-item-action"
+                                        style={{ cursor: "pointer", fontSize: "0.875rem" }}
+                                        onClick={() => selectSearchResult(r)}
+                                    >
+                                        📍 {r.display_name}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
                     <div style={{ borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
-                        <MapContainer center={courierPos} zoom={12} style={{ height: "80vh", width: "100%" }}>
+                        <MapContainer center={courierPos} zoom={12} style={{ height: "78vh", width: "100%" }}>
                             <TileLayer
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             />
                             {routePoints.length === 0 && <FitBounds points={allBoundsPoints} />}
                             {routePoints.length > 0 && <FitBounds points={routePoints} />}
+                            {flyTarget && <FlyTo position={flyTarget} />}
 
                             <Marker position={courierPos} icon={courierIcon}>
                                 <Popup><strong>Вы здесь (курьер)</strong></Popup>
                             </Marker>
+
+                            {/* Маркер найденного адреса */}
+                            {searchMarker && (
+                                <Marker position={searchMarker}>
+                                    <Popup>
+                                        <div>
+                                            <strong>📍 Найденный адрес</strong>
+                                            <br />
+                                            <small>{searchQuery}</small>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            )}
 
                             {ordersWithCoords.map((order) => {
                                 const isSelected = selectedOrder?.id === order.id;
